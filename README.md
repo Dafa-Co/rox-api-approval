@@ -107,7 +107,7 @@ Once the container is running, you can access the application using the base URL
 
 #### Example URL:
 
-If your machine's public IP is \`**203.0.113.0**\` and you are using port \`**80**\`, your base URL will be **\`http://203.0.113.0\`**.
+If your machine's public IP is \`**203.0.113.0**\` and you are using port \`**80**\`, your base URL will be \`**http://203.0.113.0**\`.
 
 ## Troubleshooting
 If you encounter issues:
