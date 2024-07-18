@@ -103,7 +103,7 @@ Once the container is running, you can access the application using the base URL
 
 ### Base URL
 - **Public IP Address**: If you are using a machine with a public IP address, the base URL will be \`http://<**PUBLIC_IP**>:<**PORT**>\`. For example, \`http://203.0.113.0:80\`.
-- **Domain Name**: If you have configured a domain name to point to your machine, the base URL will be \`http://yourdomain.com\` or \`https://yourdomain.com\` if SSL is configured.
+- **Domain Name**: If you have configured a domain name to point to your machine, the base URL will be \`http://yourdomain.com\`.
 
 #### Example URL:
 
