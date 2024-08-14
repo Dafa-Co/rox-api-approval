@@ -1,3 +1,4 @@
 export enum DriversEnum {
-  google = 'google'
+  googleDrive = 'googleDrive',
+  oneDrive = 'oneDrive'
 }

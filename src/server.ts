@@ -1,52 +1,53 @@
-import express, { Request, Response } from 'express';
-import { google } from 'googleapis';
-import { oAuth2Client, getAuthUrl, getTokens, loadToken } from './auth';
+import express, { NextFunction, Request, Response } from 'express';
 import { DriversEnum } from './Enums/DriversEnum';
 import { DriversFactory } from './Classes/DriversFactory';
+import { catchAsync } from './utils/catchAsync'; // Import the catchAsync utility
+import { query, validationResult } from 'express-validator';
 
 const app = express();
 app.use(express.json());
 const port = 3000;
-let code: string | null = null;
+const driversFactory = new DriversFactory(DriversEnum.googleDrive);
 
-const driversFactory = new DriversFactory(DriversEnum.google);
+app.get('/auth-redirect', catchAsync(async (req: Request, res: Response) => {
+  const code = req.query.code as string;
+  
 
-
-// Load OAuth token
-loadToken();
-
-const drive = google.drive({ version: 'v3', auth: oAuth2Client });
-
-app.get('/', async (req: Request, res: Response) => {
-  code = req.query.code as string;
-
-  if (code) {
-    await getTokens(code);
-    res.json({ code });
-  } else {
-    res.status(400).send('Authorization code missing.');
+  if (!code) {
+    return res.status(400).send('Authorization code not provided');
   }
+
+  await driversFactory.getTokens(code);
+
+  res.json({ code });
+}));
+
+app.get('/login', async (req, res) => {
+  await driversFactory.login(req, res);
 });
 
-app.get('/get-key', async (req: Request, res: Response) => {
+app.get('/get-key', query('vault_name').notEmpty(), query('wallet_id').notEmpty(), catchAsync(async (req: Request, res: Response) => {
+  const result = validationResult(req);
+  
+  if (result['errors']) {
+    const errors = result['errors'];
+    const entries = errors.map((error: { path: string; msg: string; }) => [error.path, error.msg] as [string, string]); console.log('entries', entries);
+    
+    return res.status(422).send(Object.fromEntries(entries));
+  }
+
   const folderName = req.query.vault_name as string;
   const fileName = req.query.wallet_id as string;
 
-
-  if (!folderName || !fileName ) {
+  if (!folderName || !fileName) {
     return res.status(400).send('Missing required fields');
   }
 
-  try {
-    const content = await driversFactory.getKey(folderName, fileName, drive);
-    res.json({ content: { private_key: content } });
-  } catch (error) {
-    console.error('Error retrieving file:', error);
-    res.status(500).json({ error: 'Error retrieving file' });
-  }
-});
+  const content = await driversFactory.getKey(folderName, fileName);
+  res.json({ content: { private_key: content } });
+}));
 
-app.post('/set-key', async (req: Request, res: Response) => {  
+app.post('/set-key', catchAsync(async (req: Request, res: Response) => {
   const folderName = req.body.vault_name as string;
   const fileName = req.body.wallet_id as string;
   const content = req.body.key as string;
@@ -55,23 +56,18 @@ app.post('/set-key', async (req: Request, res: Response) => {
     return res.status(400).send('Missing required fields');
   }
 
-  try {
-    const response = await driversFactory.setKey(folderName, fileName, content, drive); console.log('response', response)
+  const response = await driversFactory.setKey(folderName, fileName, content);
+  console.log('response', response);
 
-    res.status(200).send(`Key uploaded successfully`);
-  } catch (error) {
-    // Type guard to check if error is an instance of Error
-    if (error instanceof Error) {
-      res.status(500).send(`Error uploading key: ${error.message}`);
-    } else {
-      res.status(500).send(`Error uploading key`);
-    }
-  }
-});
+  res.status(200).send(`Key uploaded successfully`);
+}));
 
-app.get('/setup-auth', (req: Request, res: Response) => {
-  const url = getAuthUrl();
-  res.redirect(url);
+// Error-handling middleware
+app.use((err: any, req: Request, res: Response, next: NextFunction) => {
+    res.status(500).json({
+        status: 'error',
+        message: err.message || 'Internal Server Error'
+    });
 });
 
 app.listen(port, () => {
