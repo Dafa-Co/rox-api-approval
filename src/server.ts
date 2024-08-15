@@ -26,7 +26,7 @@ app.get('/login', async (req, res) => {
   await driversFactory.login(req, res);
 });
 
-app.get('/get-key', query('vault_name').notEmpty().isAlpha(), query('wallet_id').notEmpty().isNumeric(), catchAsync(async (req: Request, res: Response) => {
+app.get('/get-key', query('vault_name').notEmpty().isAlpha(), query('key_id').notEmpty().isNumeric(), catchAsync(async (req: Request, res: Response) => {
   const result = validationResult(req);
   
   if (result['errors'] && result['errors'].length > 0) {
@@ -37,13 +37,13 @@ app.get('/get-key', query('vault_name').notEmpty().isAlpha(), query('wallet_id')
   }
 
   const folderName = req.query.vault_name as string;
-  const fileName = req.query.wallet_id as string;
+  const fileName = req.query.key_id as string;
 
   const content = await driversFactory.getKey(folderName, fileName);
   res.json({ content: { private_key: content } });
 }));
 
-app.post('/set-key', body('vault_name').notEmpty().isAlpha(), body('wallet_id').notEmpty().isNumeric(), body('key').notEmpty().isString(), catchAsync(async (req: Request, res: Response) => {
+app.post('/set-key', body('vault_name').notEmpty().isAlpha(), body('key_id').notEmpty().isNumeric(), body('key').notEmpty().isString(), catchAsync(async (req: Request, res: Response) => {
   const result = validationResult(req);
   
   if (result['errors'] && result['errors'].length > 0) {
@@ -54,7 +54,7 @@ app.post('/set-key', body('vault_name').notEmpty().isAlpha(), body('wallet_id').
   }
 
   const folderName = req.body.vault_name as string;
-  const fileName = req.body.wallet_id as string;
+  const fileName = req.body.key_id as string;
   const content = req.body.key as string;
   const response = await driversFactory.setKey(folderName, fileName, content);
 
