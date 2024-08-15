@@ -26,7 +26,7 @@ app.get('/login', async (req, res) => {
   await driversFactory.login(req, res);
 });
 
-app.get('/get-key', query('vault_name').notEmpty().isAlpha(), body('wallet_id').notEmpty().isNumeric(), catchAsync(async (req: Request, res: Response) => {
+app.get('/get-key', query('vault_name').notEmpty().isAlpha(), query('wallet_id').notEmpty().isNumeric(), catchAsync(async (req: Request, res: Response) => {
   const result = validationResult(req);
   
   if (result['errors'] && result['errors'].length > 0) {
