@@ -22,6 +22,7 @@ export class MicrosoftOneDrive implements StorageDriver {
                 done(null, this.tokens.accessToken);
             }
         });
+        this.initializeAccessToken();
     }
 
     private async refreshAccessToken(refreshToken: string): Promise<Tokens> {
