@@ -1,5 +1,4 @@
 import { Request, Response } from "express";
-import { drive_v3 } from "googleapis";
 
 export interface StorageDriver {
   login(req: Request, res: Response): Promise<any>;
