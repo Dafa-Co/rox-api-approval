@@ -22,7 +22,7 @@
     "authority": "https://login.microsoftonline.com/common" this is your authority
   }
 
-- Now go to API permissions and Add these permissions ( select microsoft graph (delegated permissions) --> choose offline_access permission and the search for files choose all Files permissions )
+- Now go to API permissions and Add these permissions ( select microsoft graph (delegated permissions) --> choose offline_access permission and the search for files choose all Files permissions ) make the same for Application permissions option.
 
 - ![alt text](onedriveImages/image-2.png)
 
