@@ -3,6 +3,7 @@ import { DriversEnum } from "../Enums/DriversEnum";
 import { StorageDriver } from "../Interfaces/StorageDriver";
 import { MicrosoftOneDrive } from './../Drivers/MicrosoftOneDrive';
 import { Request, Response } from 'express';
+import { AmazonS3 } from '../Drivers/AmazonS3';
 
 export class DriversFactory {
   private driver: DriversEnum;
@@ -19,6 +20,8 @@ export class DriversFactory {
         return new GoogleDrive();
       case DriversEnum.oneDrive:
         return new MicrosoftOneDrive();
+      case DriversEnum.amazonS3:
+        return new AmazonS3();
     }
   }
 

@@ -7,7 +7,7 @@ import { body, query, validationResult } from 'express-validator';
 const app = express();
 app.use(express.json());
 const port = 3000;
-const driversFactory = new DriversFactory(DriversEnum.oneDrive);
+const driversFactory = new DriversFactory(DriversEnum.amazonS3);
 
 app.get('/auth-redirect', catchAsync(async (req: Request, res: Response) => {
   const code = req.query.code as string;
