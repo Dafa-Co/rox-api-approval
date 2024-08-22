@@ -3,10 +3,15 @@ import { DriversEnum } from './Enums/DriversEnum';
 import { DriversFactory } from './Classes/DriversFactory';
 import { catchAsync } from './utils/catchAsync'; // Import the catchAsync utility
 import { body, query, validationResult } from 'express-validator';
+import * as dotenv from 'dotenv';
+import * as process from 'process';
+
+dotenv.config();
 
 const app = express();
 app.use(express.json());
-const port = 3000;
+
+const port = process.env.PORT || 3000;
 const driversFactory = new DriversFactory(DriversEnum.dropbox);
 
 app.get('/auth-redirect', catchAsync(async (req: Request, res: Response) => {

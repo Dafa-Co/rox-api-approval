@@ -4,7 +4,7 @@ import * as process from 'process';
 
 dotenv.config();
 
-const redirectUri = `http://localhost:3000/auth-redirect`;
+const redirectUri = `${process.env.DOMAIN}:${process.env.PORT}/auth-redirect`;
 const dropboxClientIdSchema = Joi.string()
     .required()
     .messages(clientErrObj('Dropbox client id'));
