@@ -7,7 +7,7 @@ import { body, query, validationResult } from 'express-validator';
 const app = express();
 app.use(express.json());
 const port = 3000;
-const driversFactory = new DriversFactory(DriversEnum.amazonS3);
+const driversFactory = new DriversFactory(DriversEnum.dropbox);
 
 app.get('/auth-redirect', catchAsync(async (req: Request, res: Response) => {
   const code = req.query.code as string;
@@ -63,9 +63,17 @@ app.post('/set-key', body('vault_name').notEmpty().isAlpha(), body('key_id').not
 
 // Error-handling middleware
 app.use((err: any, req: Request, res: Response, next: NextFunction) => {
-    res.status(500).json({
+
+    if(err.status === 409) {
+      return res.status(409).json({
         status: 'error',
-        message: err.message || 'Internal Server Error'
+        message: 'File not found'
+      });
+    }
+
+    return res.status(500).json({
+        status: 'error',
+        message: err.message === 'UnknownError' ? 'File not found' : (err.message || 'Internal Server Error')
     });
 });
 

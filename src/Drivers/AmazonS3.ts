@@ -2,24 +2,15 @@ import { StorageDriver } from "../Interfaces/StorageDriver";
 import { Request, Response } from "express";
 import { GetObjectCommand, ListObjectsV2Command, PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import { Readable } from "stream";
-import * as dotenv from 'dotenv';
-import * as process from 'process';
-
-dotenv.config();
+import { accessKey, bucketName, endpoint, region, secretKey } from "../utils/amazonConfig";
 
 export class AmazonS3 implements StorageDriver {
     private s3Client: S3Client;
-    private bucketName: string;
-
+    
     constructor() {
-        this.bucketName = process.env.BUCKETNAME || '';
-        const accessKey = process.env.BUCKETKEY || '';
-        const secretKey = process.env.BUCKETSECRET || '';
-        const region = process.env.BUCKETREGION || '';
-
         this.s3Client = new S3Client({
             region: region,
-            endpoint: process.env.AWS_ENDPOINT || '',
+            endpoint: endpoint,
             credentials: {
                 accessKeyId: accessKey,
                 secretAccessKey: secretKey,
@@ -33,7 +24,7 @@ export class AmazonS3 implements StorageDriver {
 
     private async findOrCreateFolder(folderName: string): Promise<string> {
         const command = new ListObjectsV2Command({
-            Bucket: this.bucketName,
+            Bucket: bucketName,
             Prefix: folderName + "/",
             Delimiter: "/"
         });
@@ -44,7 +35,7 @@ export class AmazonS3 implements StorageDriver {
         } else {
             // Create a placeholder object to represent the folder
             await this.s3Client.send(new PutObjectCommand({
-                Bucket: this.bucketName,
+                Bucket: bucketName,
                 Key: `${folderName}/`
             }));
             return folderName;
@@ -58,7 +49,7 @@ export class AmazonS3 implements StorageDriver {
     async getKey(folderName: string, fileName: string): Promise<string> {
         const folderPath = await this.findOrCreateFolder(folderName);
         const command = new GetObjectCommand({
-            Bucket: this.bucketName,
+            Bucket: bucketName,
             Key: `${folderPath}/${fileName}`
         });
         const response = await this.s3Client.send(command);
@@ -71,7 +62,7 @@ export class AmazonS3 implements StorageDriver {
         const folderPath = await this.findOrCreateFolder(folderName);
 
         await this.s3Client.send(new PutObjectCommand({
-            Bucket: this.bucketName,
+            Bucket: bucketName,
             Key: `${folderPath}/${fileName}`,
             Body: content
         }));
