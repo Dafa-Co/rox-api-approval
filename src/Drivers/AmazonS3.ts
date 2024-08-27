@@ -2,12 +2,13 @@ import { StorageDriver } from "../Interfaces/StorageDriver";
 import { Request, Response } from "express";
 import { GetObjectCommand, ListObjectsV2Command, PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import { Readable } from "stream";
-import { accessKey, bucketName, endpoint, region, secretKey } from "../utils/amazonConfig";
+import { accessKey, bucketName, endpoint, region, secretKey, validateCredentials } from "../utils/amazonConfig";
 
 export class AmazonS3 implements StorageDriver {
     private s3Client: S3Client;
     
     constructor() {
+        validateCredentials();
         this.s3Client = new S3Client({
             region: region,
             endpoint: endpoint,

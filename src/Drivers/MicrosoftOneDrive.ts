@@ -1,6 +1,6 @@
 import { StorageDriver } from "../Interfaces/StorageDriver";
 import { Client } from '@microsoft/microsoft-graph-client';
-import { authority, clientId, clientSecret, redirectUri, scope, tokenUrl } from "../utils/oneDriveConfig";
+import { authority, clientId, clientSecret, redirectUri, scope, tokenUrl, validateCredentials } from "../utils/oneDriveConfig";
 import { ConfidentialClientApplication } from "@azure/msal-node";
 import { Request, Response } from "express";
 import axios from "axios";
@@ -16,6 +16,7 @@ export class MicrosoftOneDrive implements StorageDriver {
     private graphClient: Client;
 
     constructor() {
+        validateCredentials();
         this.tokens = JSON.parse(readFileSync('tokens.json', 'utf-8')) as Tokens;
         this.graphClient = Client.init({
             authProvider: (done) => {

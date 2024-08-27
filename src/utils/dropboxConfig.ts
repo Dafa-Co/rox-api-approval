@@ -12,19 +12,22 @@ const dropboxClientSecretSchema = Joi.string()
     .required()
     .messages(clientErrObj('Dropbox client secret'));
 
-const dropboxClientId = Joi.attempt(process.env.DROPBOX_CLIENT_ID, dropboxClientIdSchema);
-const dropboxClientSecret = Joi.attempt(process.env.DROPBOX_CLIENT_SECRET, dropboxClientSecretSchema);
+let dropboxClientId : string, dropboxClientSecret : string, dropboxConfig: any;
+
+const validateCredentials = () => {
+    dropboxClientId = Joi.attempt(process.env.DROPBOX_CLIENT_ID, dropboxClientIdSchema);
+    dropboxClientSecret = Joi.attempt(process.env.DROPBOX_CLIENT_SECRET, dropboxClientSecretSchema);
+    dropboxConfig = {
+        clientId: dropboxClientId,
+        clientSecret: dropboxClientSecret,
+    };
+}
 
 function clientErrObj(key: string) {
     return {
         'any.required': `${key} is required`,
     }
 }
-
-const dropboxConfig = {
-  clientId: dropboxClientId,
-  clientSecret: dropboxClientSecret,
-};
 
 interface ITokens {
     access_token: string;
@@ -41,5 +44,6 @@ export {
   dropboxClientSecret,
   dropboxConfig,
   ITokens,
-  redirectUri
+  redirectUri,
+  validateCredentials
 };
