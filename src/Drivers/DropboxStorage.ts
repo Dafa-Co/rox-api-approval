@@ -2,7 +2,7 @@ import { StorageDriver } from "../Interfaces/StorageDriver";
 import { Request, Response } from "express";
 import { readFileSync, writeFileSync } from "fs";
 import axios from "axios";
-import { ITokens, dropboxConfig, redirectUri } from "../utils/dropboxConfig";
+import { ITokens, dropboxConfig, redirectUri, validateCredentials } from "../utils/dropboxConfig";
 import { TOKEN_PATH } from "../utils/constants";
 
 const { Dropbox } = require('dropbox');
@@ -12,6 +12,7 @@ export class DropboxStorage implements StorageDriver {
     private tokens: ITokens;
 
     constructor() {
+        validateCredentials();
         this.dbx = new Dropbox(dropboxConfig);
         this.tokens = JSON.parse(readFileSync(TOKEN_PATH, 'utf-8')) as ITokens;
         this.initializeAccessToken();

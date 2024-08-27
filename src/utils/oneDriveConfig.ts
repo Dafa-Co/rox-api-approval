@@ -31,13 +31,18 @@ const authoritySchema = Joi.string()
     .uri()
     .required()
     .messages(uriErrObj('authority'));
-const credentials = JSON.parse(fs.readFileSync(CREDENTIALS_PATH));
-const clientId = Joi.attempt(credentials.onedrive.client_id, clientIdSchema);
-const clientSecret = Joi.attempt(credentials.onedrive.client_secret, clientSecretSchema);
-const redirectUri = Joi.attempt(credentials.onedrive.redirect_uri, redirectUriSchema) ;
-const tokenUrl = Joi.attempt(credentials.onedrive.token_url, tokenUriSchema) ;
-const scope = Joi.attempt(credentials.onedrive.scope, scopeSchema);
-const authority = Joi.attempt(credentials.onedrive.authority, authoritySchema)
+
+let credentials : any , clientId : string , clientSecret : string , redirectUri : string , tokenUrl : string , scope : string , authority : string;
+ 
+const validateCredentials = () => {
+  credentials = JSON.parse(fs.readFileSync(CREDENTIALS_PATH));
+  clientId = Joi.attempt(credentials.onedrive.client_id, clientIdSchema);
+  clientSecret = Joi.attempt(credentials.onedrive.client_secret, clientSecretSchema);
+  redirectUri = Joi.attempt(credentials.onedrive.redirect_uri, redirectUriSchema) ;
+  tokenUrl = Joi.attempt(credentials.onedrive.token_url, tokenUriSchema) ;
+  scope = Joi.attempt(credentials.onedrive.scope, scopeSchema);
+  authority = Joi.attempt(credentials.onedrive.authority, authoritySchema);
+}
 
 function uriErrObj(key: string) {
   return {
@@ -60,5 +65,6 @@ export {
   redirectUri,
   tokenUrl,
   scope,
-  authority
+  authority,
+  validateCredentials
 };
