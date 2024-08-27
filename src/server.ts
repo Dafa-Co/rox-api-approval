@@ -12,7 +12,24 @@ const app = express();
 app.use(express.json());
 
 const port = process.env.PORT || 3000;
-const driversFactory = new DriversFactory(DriversEnum.dropbox);
+let driversFactory : DriversFactory;
+
+switch (process.env.HANDLER) {
+      case DriversEnum.googleDrive:
+        driversFactory = new DriversFactory(DriversEnum.googleDrive);
+        break;
+      case DriversEnum.oneDrive:
+        driversFactory = new DriversFactory(DriversEnum.oneDrive);
+        break;
+      case DriversEnum.amazonS3:
+        driversFactory = new DriversFactory(DriversEnum.amazonS3);
+        break;
+      case DriversEnum.dropbox:
+        driversFactory = new DriversFactory(DriversEnum.dropbox);
+        break;
+      default:
+        throw new Error("Invalid handler");
+}
 
 app.get('/auth-redirect', catchAsync(async (req: Request, res: Response) => {
   const code = req.query.code as string;
