@@ -16,7 +16,7 @@ const driversFactory = new DriversFactory(DriversEnum.dropbox);
 
 app.get('/auth-redirect', catchAsync(async (req: Request, res: Response) => {
   const code = req.query.code as string;
-  
+
 
   if (!code) {
     return res.status(400).send('Authorization code not provided');
@@ -33,11 +33,11 @@ app.get('/login', async (req, res) => {
 
 app.get('/get-key', query('vault_name').notEmpty().isAlpha(), query('key_id').notEmpty().isNumeric(), catchAsync(async (req: Request, res: Response) => {
   const result = validationResult(req);
-  
+
   if (result['errors'] && result['errors'].length > 0) {
     const errors = result['errors'];
     const entries = errors.map((error: { path: string; msg: string; }) => [error.path, error.msg] as [string, string]);
-    
+
     return res.status(422).send(Object.fromEntries(entries));
   }
 
@@ -50,11 +50,11 @@ app.get('/get-key', query('vault_name').notEmpty().isAlpha(), query('key_id').no
 
 app.post('/set-key', body('vault_name').notEmpty().isAlpha(), body('key_id').notEmpty().isNumeric(), body('key').notEmpty().isString(), catchAsync(async (req: Request, res: Response) => {
   const result = validationResult(req);
-  
+
   if (result['errors'] && result['errors'].length > 0) {
     const errors = result['errors'];
     const entries = errors.map((error: { path: string; msg: string; }) => [error.path, error.msg] as [string, string]);
-    
+
     return res.status(422).send(Object.fromEntries(entries));
   }
 
