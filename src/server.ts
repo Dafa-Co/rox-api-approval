@@ -5,11 +5,31 @@ import { catchAsync } from './utils/catchAsync'; // Import the catchAsync utilit
 import { body, query, validationResult } from 'express-validator';
 import * as dotenv from 'dotenv';
 import * as process from 'process';
+import { checkApiKey } from './utils/middlewares/api-key-auth.middleware';
+import { checkOrigin } from './utils/middlewares/check-origins.middleware';
 
 dotenv.config();
 
+export let API_KEY = process.env.API_KEY;
+
 const app = express();
 app.use(express.json());
+app.use(checkApiKey); // Apply API Key check globally
+
+// Health Check Endpoint
+app.get('/healthz', (req: Request, res: Response) => {
+  res.status(200).json({ status: 'OK', message: 'Service is up and running.' });
+});
+
+// Update API Key Endpoint
+app.post('/update-api-key', (req: Request, res: Response) => {
+  // Assuming body contains newKey and we have a method to update it
+  const { newKey } = req.body;
+  API_KEY = newKey;
+  res.status(200).json({ message: 'API Key updated successfully.' });
+});
+
+app.use(checkOrigin);
 
 const port = process.env.PORT || 3000;
 let driversFactory : DriversFactory;
@@ -99,6 +119,66 @@ app.use((err: any, req: Request, res: Response, next: NextFunction) => {
     });
 });
 
-app.listen(port, () => {
-  console.log(`Server running at http://localhost:${port}`);
+app.listen(port, async () => {
+  console.log(`Server running at ${process.env.DOMAIN}:${port}, ${API_KEY}`);
+  const custodyUrl = process.env.CUSTODY_URL;
+  try {
+    const response = await fetch(`${custodyUrl}/integration/vaults/verify-vault`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-API-Key': API_KEY
+      },
+      body: JSON.stringify({ message: 'Verify this vault' })
+    });
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    const data = await response.json();
+    console.log('Vault verification response:', data);
+  } catch (error) {
+    console.error('Failed to verify vault:', error);
+  }
 });
+
+
+// // Function to handle graceful shutdown
+// async function gracefulShutdown(signal: string) {
+//   console.log(`Received ${signal}. Shutting down gracefully.`);
+//   const custodyUrl = process.env.CUSTODY_URL;
+//   try {
+//     // Notify an API that the server is going down
+//     const response = await fetch(`${custodyUrl}/integration/vaults/inactive-vault`, {
+//       method: 'POST',
+//       headers: {
+//         'Content-Type': 'application/json',
+//         'X-API-Key': API_KEY
+//       },
+//       body: JSON.stringify({ message: 'Server is going down' })
+//     });
+
+//     if (!response.ok) {
+//       throw new Error(`HTTP error! status: ${response.status}`);
+//     }
+
+//     const data = await response.json();
+//     console.log('Shutdown notification response:', data);
+
+//   } catch (error) {
+//     console.error('Failed to notify shutdown:', error);
+//   } finally {
+//     console.log('Closing server...');
+//     process.exit(0);
+//   }
+// }
+
+// process.on('beforeExit', (err) => {
+//   console.error('Uncaught Exception:', err);
+//   process.exit(1);
+// });
+
+// // // Listen for TERM signal .e.g. kill
+// // process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+
+// // // Listen for INT signal e.g. Ctrl-C
+// // process.on('SIGINT', () => gracefulShutdown('SIGINT'));

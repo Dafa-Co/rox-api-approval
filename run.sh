@@ -144,15 +144,18 @@ read -p "Please enter the domain or the ip of the vm: " user_domain
 
 echo "Domain or IP: $user_domain"
 
+
 # Validate the domain or the IP
 if ! [[ "$user_domain" =~ ^([0-9]{1,3}\.){3}[0-9]{1,3}$ ]] && ! [[ "$user_domain" =~ ^[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$ ]]; then
     echo "Invalid domain or IP. Please enter a valid domain or IP."
     exit 1
 fi
 
+read -p "please enter the subdomain of your Corporate: " corporate_subdomain
 
+read -p "Please enter the API key From Custody: " api_key
+echo "API_KEY=$api_key" >>.env
 echo "DOMAIN=$user_domain" >>.env
-echo "PORT=3000" >>.env
 
 # Ask for the port number
 read -p "Please enter the port you would like to run the application on: " user_port
@@ -163,9 +166,13 @@ if [[ ! "$user_port" =~ ^[0-9]+$ ]] || [ "$user_port" -lt 1 ] || [ "$user_port" 
     exit 1
 fi
 
+# CONST ENVS
+echo "PORT=3000" >>.env
+echo "URL=http://$user_domain:$user_port" >>.env
+echo "CUSTODY_URL=http://${corporate_subdomain}.localhost:4000/api" >>.env
+
 # Run the Docker container with the file mounted
 echo "Running the application on $user_domain:$user_port... $file_to_mount"
-docker run -p $user_port:3000 -v "$(pwd)/$file_to_mount":/usr/src/app/$file_to_mount -v "$(pwd)/.env":/usr/src/app/.env rox-api-approval
+
+docker run -d -p $user_port:3000 -v "$(pwd)/$file_to_mount":/usr/src/app/$file_to_mount -v "$(pwd)/.env":/usr/src/app/.env rox-api-approval
 echo "Container is running on port $user_port and $file_to_mount has been added inside the container."
-
-
