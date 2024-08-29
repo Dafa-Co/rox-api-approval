@@ -120,27 +120,39 @@ app.use((err: any, req: Request, res: Response, next: NextFunction) => {
 });
 
 app.listen(port, async () => {
-  console.log(`Server running at ${process.env.DOMAIN}:${port}, ${API_KEY}`);
+  console.log(`Server running at ${process.env.DOMAIN}:${port}`);
   const custodyUrl = process.env.CUSTODY_URL;
   try {
-    const response = await fetch(`${custodyUrl}/integration/vaults/verify-vault`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-API-Key': API_KEY
-      },
-      body: JSON.stringify({ message: 'Verify this vault' })
-    });
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-    const data = await response.json();
-    console.log('Vault verification response:', data);
-  } catch (error) {
+    const healthCheck = async () => {
+      try {
+        const response = await fetch(`${custodyUrl}/integration/vaults/api-approval-health-check`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-API-Key': API_KEY
+          },
+          body: JSON.stringify({ url: process.env.URL })
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        console.log('Vault verification response:', data);
+      } catch (error) {
+        console.error('Failed to verify vault:', error);
+      }
+    };
+
+    // Initial health check on server start
+    await healthCheck();
+
+    // Set interval to perform health check every 60 seconds
+    setInterval(healthCheck, 30000);  } catch (error) {
     console.error('Failed to verify vault:', error);
   }
 });
-
 
 // // Function to handle graceful shutdown
 // async function gracefulShutdown(signal: string) {
