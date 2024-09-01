@@ -4,7 +4,6 @@ import { DriversFactory } from './Classes/DriversFactory';
 import { catchAsync } from './utils/catchAsync'; // Import the catchAsync utility
 import { body, query, validationResult } from 'express-validator';
 import * as dotenv from 'dotenv';
-import * as process from 'process';
 import { checkApiKey } from './utils/middlewares/api-key-auth.middleware';
 import { checkOrigin } from './utils/middlewares/check-origins.middleware';
 
@@ -154,43 +153,43 @@ app.listen(port, async () => {
   }
 });
 
-// // Function to handle graceful shutdown
-// async function gracefulShutdown(signal: string) {
-//   console.log(`Received ${signal}. Shutting down gracefully.`);
-//   const custodyUrl = process.env.CUSTODY_URL;
-//   try {
-//     // Notify an API that the server is going down
-//     const response = await fetch(`${custodyUrl}/integration/vaults/inactive-vault`, {
-//       method: 'POST',
-//       headers: {
-//         'Content-Type': 'application/json',
-//         'X-API-Key': API_KEY
-//       },
-//       body: JSON.stringify({ message: 'Server is going down' })
-//     });
+// Function to handle graceful shutdown
+async function gracefulShutdown(signal: string) {
+  console.log(`Received ${signal}. Shutting down gracefully.`);
+  const custodyUrl = process.env.CUSTODY_URL;
+  try {
+    // Notify an API that the server is going down
+    const response = await fetch(`${custodyUrl}/integration/vaults/inactive-vault`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-API-Key': API_KEY
+      },
+      body: JSON.stringify({ message: 'Server is going down' })
+    });
 
-//     if (!response.ok) {
-//       throw new Error(`HTTP error! status: ${response.status}`);
-//     }
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
 
-//     const data = await response.json();
-//     console.log('Shutdown notification response:', data);
+    const data = await response.json();
+    console.log('Shutdown notification response:', data);
 
-//   } catch (error) {
-//     console.error('Failed to notify shutdown:', error);
-//   } finally {
-//     console.log('Closing server...');
-//     process.exit(0);
-//   }
-// }
+  } catch (error) {
+    console.error('Failed to notify shutdown:', error);
+  } finally {
+    console.log('Closing server...');
+    process.exit(0);
+  }
+}
 
-// process.on('beforeExit', (err) => {
-//   console.error('Uncaught Exception:', err);
-//   process.exit(1);
-// });
+process.on('uncaughtException', (err) => {
+  console.error('Uncaught Exception:', err);
+  process.exit(1);
+});
 
-// // // Listen for TERM signal .e.g. kill
-// // process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+// Listen for TERM signal .e.g. kill
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
 
-// // // Listen for INT signal e.g. Ctrl-C
-// // process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+// Listen for INT signal e.g. Ctrl-C
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));
