@@ -146,10 +146,10 @@ echo "Domain or IP: $user_domain"
 
 
 # Validate the domain or the IP
-if ! [[ "$user_domain" =~ ^([0-9]{1,3}\.){3}[0-9]{1,3}$ ]] && ! [[ "$user_domain" =~ ^[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$ ]]; then
-    echo "Invalid domain or IP. Please enter a valid domain or IP."
-    exit 1
-fi
+# if ! [[ "$user_domain" =~ ^([0-9]{1,3}\.){3}[0-9]{1,3}$ ]] && ! [[ "$user_domain" =~ ^[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$ ]]; then
+#     echo "Invalid domain or IP. Please enter a valid domain or IP."
+#     exit 1
+# fi
 
 read -p "please enter the subdomain of your Corporate: " corporate_subdomain
 

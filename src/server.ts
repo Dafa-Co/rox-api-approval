@@ -32,8 +32,9 @@ app.use(checkOrigin);
 
 const port = process.env.PORT || 3000;
 let driversFactory : DriversFactory;
+const Handler = DriversEnum.dropbox as any;
 
-switch (process.env.HANDLER) {
+switch (Handler) {
       case DriversEnum.googleDrive:
         driversFactory = new DriversFactory(DriversEnum.googleDrive);
         break;
@@ -67,7 +68,7 @@ app.get('/login', async (req, res) => {
   await driversFactory.login(req, res);
 });
 
-app.get('/get-key', query('vault_name').notEmpty().isAlpha(), query('key_id').notEmpty().isNumeric(), catchAsync(async (req: Request, res: Response) => {
+app.post('/get-key', query('vault_name').notEmpty(), body('key_id').notEmpty().isNumeric(), catchAsync(async (req: Request, res: Response) => {
   const result = validationResult(req);
 
   if (result['errors'] && result['errors'].length > 0) {
@@ -78,13 +79,14 @@ app.get('/get-key', query('vault_name').notEmpty().isAlpha(), query('key_id').no
   }
 
   const folderName = req.query.vault_name as string;
-  const fileName = req.query.key_id as string;
+  const fileName = req.body.key_id as string;
+
 
   const content = await driversFactory.getKey(folderName, fileName);
-  res.json({ content: { private_key: content } });
+  res.json({ private_key: content } );
 }));
 
-app.post('/set-key', body('vault_name').notEmpty().isAlpha(), body('key_id').notEmpty().isNumeric(), body('key').notEmpty().isString(), catchAsync(async (req: Request, res: Response) => {
+app.post('/set-key', body('vault_name').notEmpty(), body('key_id').notEmpty().isNumeric(), body('key').notEmpty().isString(), catchAsync(async (req: Request, res: Response) => {
   const result = validationResult(req);
 
   if (result['errors'] && result['errors'].length > 0) {
@@ -97,7 +99,14 @@ app.post('/set-key', body('vault_name').notEmpty().isAlpha(), body('key_id').not
   const folderName = req.body.vault_name as string;
   const fileName = req.body.key_id as string;
   const content = req.body.key as string;
-  const response = await driversFactory.setKey(folderName, fileName, content);
+
+  try {
+    const response = await driversFactory.setKey(folderName, fileName, content);
+  } catch (error) {
+    console.error('Failed to set key:', error);
+    throw new Error('Failed to set key');
+  }
+
 
   res.status(200).send(`Key uploaded successfully`);
 }));
@@ -124,11 +133,11 @@ app.listen(port, async () => {
   try {
     const healthCheck = async () => {
       try {
-        const response = await fetch(`${custodyUrl}/integration/vaults/api-approval-health-check`, {
+        const response = await fetch(`${custodyUrl}/backup-storage-integration/api-approval-health-check`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'X-API-Key': API_KEY
+            'x-verify-key': API_KEY
           },
           body: JSON.stringify({ url: process.env.URL })
         });
@@ -148,7 +157,8 @@ app.listen(port, async () => {
     await healthCheck();
 
     // Set interval to perform health check every 60 seconds
-    setInterval(healthCheck, 30000);  } catch (error) {
+    setInterval(healthCheck, 30000);
+  } catch (error) {
     console.error('Failed to verify vault:', error);
   }
 });
@@ -159,11 +169,11 @@ async function gracefulShutdown(signal: string) {
   const custodyUrl = process.env.CUSTODY_URL;
   try {
     // Notify an API that the server is going down
-    const response = await fetch(`${custodyUrl}/integration/vaults/inactive-vault`, {
+    const response = await fetch(`${custodyUrl}/backup-storage-integration/inactive-vault`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'X-API-Key': API_KEY
+        'x-verify-key': API_KEY
       },
       body: JSON.stringify({ message: 'Server is going down' })
     });
