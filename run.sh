@@ -41,15 +41,19 @@ check_docker_installed || {
 
 # Function to display options and get user choice
 display_options() {
-    while true; do
-        echo "" >.env
+    local choice=$1  # Use the first argument as the choice
+
+    if [ -z "$choice" ]; then
+        # If no argument is passed, prompt the user
         echo "Please choose an option:"
         echo "1) AWS S3"       # .env
         echo "2) One Drive"    # credentials.json
         echo "3) Google Drive" # credentials.json
         echo "4) Dropbox"      # .env
         read -p "Enter your choice (1-4): " choice
-        case $choice in
+    fi
+
+    case $choice in
         1)
             echo "You chose AWS S3."
             # Collect AWS credentials
@@ -68,13 +72,12 @@ display_options() {
             echo "HANDLER=amazonS3" >>.env
 
             file_to_mount=".env"
+            docker_image="roxcustody/amazons3"
 
-            echo "AWS credentials have been added to .env file."
-            break
             ;;
         2)
+            echo "You chose One Drive."
             while true; do
-                echo "You chose One Drive."
                 read -p "Enter the path to your One Drive credentials.json: " one_drive_path
                 one_drive_path="${one_drive_path/#\~/$HOME}"
                 if [[ -f "$one_drive_path" ]]; then
@@ -88,12 +91,12 @@ display_options() {
             done
 
             file_to_mount="credentials.json"
+            docker_image="roxcustody/one_drive"
 
-            break
             ;;
         3)
+            echo "You chose Google Drive."
             while true; do
-                echo "You chose Google Drive."
                 read -p "Enter the Full path (absolute) to your Google Drive credentials.json: " google_drive_path
                 google_drive_path="${google_drive_path/#\~/$HOME}"
 
@@ -108,8 +111,8 @@ display_options() {
             done
 
             file_to_mount="credentials.json"
+            docker_image="roxcustody/google_drive"
 
-            break
             ;;
         4)
             echo "You chose Dropbox."
@@ -125,19 +128,18 @@ display_options() {
             echo "HANDLER=dropbox" >>.env
 
             file_to_mount=".env"
+            docker_image="roxcustody/dropbox"
 
-            echo "Dropbox credentials have been added to .env file."
-            break
             ;;
         *)
             echo "Invalid choice. Please select a number between 1 and 4."
+            exit 1
             ;;
-        esac
-    done
+    esac
 }
 
-# Get user choice
-display_options
+# Use the first argument passed to the script as the user's choice
+display_options "$1"
 
 # ask the user for the domain or the ip of the vm
 read -p "Please enter the domain or the ip of the vm: " user_domain
@@ -174,5 +176,5 @@ echo "CUSTODY_URL=http://${corporate_subdomain}.localhost:4000/api" >>.env
 # Run the Docker container with the file mounted
 echo "Running the application on $user_domain:$user_port... $file_to_mount"
 
-docker run -d -p $user_port:3000 -v "$(pwd)/$file_to_mount":/usr/src/app/$file_to_mount -v "$(pwd)/.env":/usr/src/app/.env rox-api-approval
+docker run -d -p $user_port:3000 -v "$(pwd)/$file_to_mount":/usr/src/app/$file_to_mount -v "$(pwd)/.env":/usr/src/app/.env $docker_image
 echo "Container is running on port $user_port and $file_to_mount has been added inside the container."
