@@ -32,9 +32,8 @@ app.use(checkOrigin);
 
 const port = process.env.PORT || 3000;
 let driversFactory : DriversFactory;
-const Handler = DriversEnum.dropbox as any;
 
-switch (Handler) {
+switch (process.env.HANDLER) {
       case DriversEnum.googleDrive:
         driversFactory = new DriversFactory(DriversEnum.googleDrive);
         break;
@@ -99,6 +98,7 @@ app.post('/set-key', body('vault_name').notEmpty(), body('key_id').notEmpty().is
   const folderName = req.body.vault_name as string;
   const fileName = req.body.key_id as string;
   const content = req.body.key as string;
+  console.log("1")
 
   try {
     const response = await driversFactory.setKey(folderName, fileName, content);
@@ -107,6 +107,7 @@ app.post('/set-key', body('vault_name').notEmpty(), body('key_id').notEmpty().is
     throw new Error('Failed to set key');
   }
 
+  console.log("2")
 
   res.status(200).send(`Key uploaded successfully`);
 }));
