@@ -4,6 +4,12 @@
 - Sign in or create new account
 - create new project and fill the data then click create
 
+![alt text](image.png)
+
+
+![alt text](image-1.png)
+
+
 - ![alt text](googleDriveImages/image.png)
 
 - from the notifications select the project
@@ -48,7 +54,7 @@
 
 - ![alt text](googleDriveImages/image-10.png)
 
-- enter your data 
+- enter your data
 
 - ![alt text](googleDriveImages/image-11.png)
 

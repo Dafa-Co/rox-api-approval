@@ -1,0 +1,12 @@
+services:
+  api-approval:
+    build: .
+    networks:
+      - custody_global_network
+    extra_hosts:
+      - "waer.web_server:172.18.0.6"
+
+networks:
+  custody_global_network:
+    external: true
+    name: services_custody_global_network
