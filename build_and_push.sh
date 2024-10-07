@@ -3,7 +3,7 @@
 # Function to build and push Docker image
 build_and_push() {
     service_name=$1
-    image_tag="roxcustody/${service_name}:1.0.0"
+    image_tag="roxcustody/${service_name}:latest"
 
     echo "Building Docker image for ${service_name}..."
     docker build -t $image_tag .
