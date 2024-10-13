@@ -6,6 +6,8 @@ import { body, query, validationResult } from 'express-validator';
 import * as dotenv from 'dotenv';
 import { checkApiKey } from './utils/middlewares/api-key-auth.middleware';
 import { checkOrigin } from './utils/middlewares/check-origins.middleware';
+import { IApiApprovalSyncInterface } from './Interfaces/api-approval-sync.interface';
+import { handleSync } from './sync/handle-sync';
 
 dotenv.config();
 
@@ -98,8 +100,6 @@ app.post('/set-key', body('vault_name').notEmpty(), body('key_id').notEmpty().is
   const folderName = req.body.vault_name as string;
   const fileName = req.body.key_id as string;
   const content = req.body.key as string;
-  console.log("1")
-
   try {
     const response = await driversFactory.setKey(folderName, fileName, content);
   } catch (error) {
@@ -107,10 +107,50 @@ app.post('/set-key', body('vault_name').notEmpty(), body('key_id').notEmpty().is
     throw new Error('Failed to set key');
   }
 
-  console.log("2")
-
   res.status(200).send(`Key uploaded successfully`);
 }));
+
+app.post(
+  '/sync-request',
+  [
+    // Validation middleware for incoming data
+    query('vault_name').notEmpty().withMessage('vault_name query parameter is required'),
+    body('keysIds').isArray({
+      min: 1
+    }).withMessage('keysIds must be an array of key IDs'),
+    body('publicKey').notEmpty().withMessage('publicKey is required'),
+    body('syncId').notEmpty().withMessage('syncId is required'),
+  ],
+  catchAsync(async (req: Request, res: Response) => {
+    // Handle validation errors
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(422).json({ errors: errors.array() });
+    }
+
+    // Extract the validated data from the request
+    const vaultName = req.query.vault_name as string;
+    const { keysIds, publicKey, syncId } = req.body;
+
+    // You can now process the data, e.g., insert it into your database, send to another service, etc.
+    try {
+      const payload: IApiApprovalSyncInterface = {
+        keysIds,
+        publicKey,
+        syncId
+      }
+
+      handleSync(payload, driversFactory);
+
+      res.status(200).json({ message: 'Sync request received successfully' });
+    } catch (error) {
+      console.error('Failed to process sync request:', error);
+      res.status(500).json({ error: 'Failed to process sync request' });
+    }
+  })
+);
+
+
 
 // Error-handling middleware
 app.use((err: any, req: Request, res: Response, next: NextFunction) => {

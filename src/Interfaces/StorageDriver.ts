@@ -5,4 +5,6 @@ export interface StorageDriver {
   getTokens(code: string): Promise<any>;
   getKey(folderName: string, fileName: string): Promise<any>;
   setKey(folderName: string, fileName: string, content: string): Promise<any>;
+  // getNumberOfKeys(folderName: string): Promise<any>;
+  // listFiles(folderName: string): Promise<any>;
 }

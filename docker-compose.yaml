@@ -1,10 +1,16 @@
 services:
   api-approval:
     build: .
+    volumes:
+      - ./:/usr/src/app
     networks:
       - custody_global_network
     extra_hosts:
-      - "waer.web_server:172.18.0.6"
+      - "waer.web_server:172.18.0.7"
+    env_file:
+      - .env
+    ports:
+      - "3005:3000"
 
 networks:
   custody_global_network:
