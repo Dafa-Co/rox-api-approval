@@ -27,7 +27,6 @@ export async function handleSync(
 
   // Monitor client disconnection
   res.on("close", () => {
-    console.log("Client disconnected");
     clientConnected = false;
   });
 
@@ -35,7 +34,6 @@ export async function handleSync(
   const fileIterator = async function* (): AsyncGenerator<string> {
     for await (const files of driversFactory.listFilesIterator(folderName, keysIds)) {
       for (const file of files) {
-        console.log(`Processing file: ${file}`);
         yield file;
       }
     }
@@ -43,24 +41,7 @@ export async function handleSync(
 
   try {
     // Create a readable stream with proper backpressure handling
-    const fileStream = new Readable({
-      objectMode: true,
-      async read() {
-        try {
-          for await (const file of fileIterator()) {
-            if (!this.push(file)) {
-              // Stop reading if backpressure is detected
-              console.log('Backpressure detected, pausing the generator');
-              break;
-            }
-          }
-          this.push(null); // Signal end of stream
-        } catch (error) {
-          console.error('Error in file generator:', error);
-          this.destroy(error); // Destroy the stream on error
-        }
-      },
-    });
+    const fileStream = Readable.from(fileIterator(), { objectMode: true });
 
     // Initialize all processing streams
     const downloader = new ApiApprovalKeyDownloader(driversFactory, folderName, {}, 10);
@@ -69,11 +50,9 @@ export async function handleSync(
 
     // Handle client disconnection properly
     res.on("close", () => {
-      console.log("Closing downloader stream...");
       downloader.end(); // Stop downloader if the client disconnects
     });
 
-    console.log("Starting sync...");
 
     // Use pipeline to manage the data flow and backpressure
     await pipelineAsync(
@@ -84,7 +63,6 @@ export async function handleSync(
       res                   // Send the encrypted data to the client
     );
 
-    console.log("Sync completed successfully.");
   } catch (error) {
     console.error("Error during sync:", error);
 

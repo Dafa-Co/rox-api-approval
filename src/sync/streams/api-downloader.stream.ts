@@ -100,4 +100,13 @@ export class ApiApprovalKeyDownloader extends Transform {
       this.continueCb = done;
     }
   }
+
+  _flush(done: TransformCallback): void {
+    if(this.runningProcesses > 0) {
+      this.terminateCb = done;
+    } else {
+      done();
+    }
+  }
+
 }

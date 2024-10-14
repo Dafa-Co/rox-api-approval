@@ -41,6 +41,8 @@ export class EncryptionStream extends Transform {
 
       // Encrypt the data with AES
       const encryptedChunk = this.cipher.update(chunk);
+
+      console.log("Encrypted chunk:", encryptedChunk);
       this.push(encryptedChunk);
 
       done();

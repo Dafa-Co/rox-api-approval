@@ -183,7 +183,7 @@ app.post(
         vaultName,
       };
 
-      handleSync(res, payload, driversFactory);
+    await  handleSync(res, payload, driversFactory);
     } catch (error) {
       console.error("Failed to process sync request:", error);
       res.status(500).json({ error: "Failed to process sync request" });
