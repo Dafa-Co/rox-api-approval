@@ -6,7 +6,7 @@ import { accessKey, bucketName, endpoint, region, secretKey, validateCredentials
 
 export class AmazonS3 implements StorageDriver {
     private s3Client: S3Client;
-    
+
     constructor() {
         validateCredentials();
         this.s3Client = new S3Client({
@@ -18,16 +18,16 @@ export class AmazonS3 implements StorageDriver {
             },
         });
     }
-    
+
     getTokens(code: string): Promise<any> {
-        throw new Error("Method not implemented.");
+        return;
     }
 
     private async findOrCreateFolder(folderName: string): Promise<string> {
         const command = new ListObjectsV2Command({
             Bucket: bucketName,
             Prefix: folderName + "/",
-            Delimiter: "/"
+            Delimiter: "/",
         });
         const response = await this.s3Client.send(command);
 
@@ -78,4 +78,23 @@ export class AmazonS3 implements StorageDriver {
         }
         return Buffer.concat(chunks).toString("utf-8");
     }
+
+
+    async *listFilesIterator(folderName: string, chunkSize: number): AsyncIterableIterator<string[]> {
+        let continuationToken: string | undefined = undefined;
+        do {
+            const command = new ListObjectsV2Command({
+                Bucket: bucketName,
+                Prefix: `${folderName}/`,
+                ContinuationToken: continuationToken,
+                MaxKeys: chunkSize
+            });
+            const response = await this.s3Client.send(command);
+            continuationToken = response.NextContinuationToken;
+
+            const files = response.Contents?.map(file => file.Key?.replace(`${folderName}/`, '') || '') || [];
+            yield files;
+        } while (continuationToken);
+    }
+
 }
