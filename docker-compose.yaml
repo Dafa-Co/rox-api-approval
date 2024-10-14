@@ -6,7 +6,7 @@ services:
     networks:
       - custody_global_network
     extra_hosts:
-      - "waer.web_server:172.18.0.10"
+      - "waer.web_server:172.18.0.8"
     env_file:
       - .env
     ports:
