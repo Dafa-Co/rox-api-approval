@@ -6,6 +6,7 @@ import { promisify } from "util";
 import { SHA256CalculatorStream } from "./streams/sha256-calculator.stream";
 import { ApiApprovalKeyDownloader } from "./streams/api-downloader.stream";
 import { EncryptionStream } from "./streams/encypt.stream";
+import { constants, createPublicKey, publicEncrypt, randomBytes } from "crypto";
 
 const pipelineAsync = promisify(pipeline);
 
@@ -16,6 +17,7 @@ export async function handleSync(
 ) {
   // Set response headers for streaming
   res.setHeader("Content-Type", "application/octet-stream");
+  res.setHeader('Transfer-Encoding', 'chunked');
   res.setHeader("Cache-Control", "no-cache");
   res.setHeader("Connection", "keep-alive");
   res.flushHeaders(); // Send headers immediately to the client
@@ -46,7 +48,20 @@ export async function handleSync(
     // Initialize all processing streams
     const downloader = new ApiApprovalKeyDownloader(driversFactory, folderName, {}, 10);
     const sha256Calculator = new SHA256CalculatorStream();
-    const encryptor = new EncryptionStream(publicKey);
+
+
+    const aesKey = randomBytes(32); // AES-256 key
+    const iv = randomBytes(16); // Initialization vector
+    const encryptedKey = publicEncrypt(
+      { key: createPublicKey(publicKey), padding: constants.RSA_PKCS1_OAEP_PADDING },
+      Buffer.concat([aesKey, iv])
+    );
+    // Prefix the key for identification
+    const prefix = "ENCRYPTED_AES_KEY:";
+    const prefixedEncryptedKey = Buffer.concat([Buffer.from(prefix), encryptedKey]);
+    res.write(prefixedEncryptedKey);
+
+    const encryptor = new EncryptionStream(iv, aesKey);
 
     // Handle client disconnection properly
     res.on("close", () => {
