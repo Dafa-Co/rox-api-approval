@@ -5,6 +5,7 @@ import { MicrosoftOneDrive } from "./../Drivers/MicrosoftOneDrive";
 import { Request, Response } from "express";
 import { AmazonS3 } from "../Drivers/AmazonS3";
 import { DropboxStorage } from "../Drivers/DropboxStorage";
+import { GoogleCloudStorage } from "./../Drivers/GoogleCloudStorage";
 
 export function IsSelectAll(arr: any[]) {
   return arr.length === 1 && !arr[0];
@@ -29,6 +30,8 @@ export class DriversFactory {
         return new AmazonS3();
       case DriversEnum.dropbox:
         return new DropboxStorage();
+      case DriversEnum.googleCloudStorage:
+        return new GoogleCloudStorage();
     }
   }
 
