@@ -60,7 +60,7 @@ export class GoogleDrive implements StorageDriver {
     }
 
     // Exchange authorization code for tokens
-    async getTokens(code: any) {        
+    async getTokens(code: any) {
         const { tokens } = await this.oAuth2Client.getToken(code);
         console.log('Received tokens:', tokens);
         this.oAuth2Client.setCredentials(tokens);
@@ -130,4 +130,26 @@ export class GoogleDrive implements StorageDriver {
 
         return response;
     }
+
+
+    async *listFilesIterator(
+        folderName: string,
+        chunkSize: number
+    ): AsyncIterableIterator<string[]> {
+        let pageToken: string | undefined = undefined;
+        do {
+            const response = await this.drive.files.list({
+                q: `'${folderName}' in parents and trashed=false`,
+                fields: 'nextPageToken, files(id, name)',
+                pageToken: pageToken,
+                pageSize: chunkSize,
+            });
+
+            pageToken = response.data.nextPageToken;
+
+            const files = response.data.files?.map(file => file.name || '') || [];
+            yield files;
+        } while (pageToken);
+    }
+
 }

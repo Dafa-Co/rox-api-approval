@@ -20,11 +20,15 @@ const endpointSchema = Joi.string()
     .required()
     .messages(clientErrObj('Endpoint'));
 
-const bucketName = Joi.attempt(process.env.BUCKETNAME, bucketNameSchema);
-const accessKey = Joi.attempt(process.env.BUCKETKEY, accessKeySchema);
-const secretKey = Joi.attempt(process.env.BUCKETSECRET, secretKeySchema) ;
-const region = Joi.attempt(process.env.BUCKETREGION, regionSchema) ;
-const endpoint = Joi.attempt(process.env.AWS_ENDPOINT, endpointSchema);
+let bucketName: string, accessKey: string, secretKey: string, region:string, endpoint: string
+
+const validateCredentials = () => {
+    bucketName = Joi.attempt(process.env.BUCKETNAME, bucketNameSchema);
+    accessKey = Joi.attempt(process.env.BUCKETKEY, accessKeySchema);
+    secretKey = Joi.attempt(process.env.BUCKETSECRET, secretKeySchema) ;
+    region = Joi.attempt(process.env.BUCKETREGION, regionSchema) ;
+    endpoint = Joi.attempt(process.env.AWS_ENDPOINT, endpointSchema);
+}
 
 function clientErrObj(key: string) {
     return {
@@ -37,5 +41,6 @@ export {
   accessKey,
   secretKey,
   region,
-  endpoint
+  endpoint,
+  validateCredentials
 };

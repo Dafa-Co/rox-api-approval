@@ -1,6 +1,6 @@
 import { StorageDriver } from "../Interfaces/StorageDriver";
 import { Client } from '@microsoft/microsoft-graph-client';
-import { authority, clientId, clientSecret, redirectUri, scope, tokenUrl } from "../utils/oneDriveConfig";
+import { authority, clientId, clientSecret, redirectUri, scope, tokenUrl, validateCredentials } from "../utils/oneDriveConfig";
 import { ConfidentialClientApplication } from "@azure/msal-node";
 import { Request, Response } from "express";
 import axios from "axios";
@@ -16,6 +16,7 @@ export class MicrosoftOneDrive implements StorageDriver {
     private graphClient: Client;
 
     constructor() {
+        validateCredentials();
         this.tokens = JSON.parse(readFileSync('tokens.json', 'utf-8')) as Tokens;
         this.graphClient = Client.init({
             authProvider: (done) => {
@@ -143,7 +144,7 @@ export class MicrosoftOneDrive implements StorageDriver {
 
     async setKey(folderName: string, fileName: string, content: string): Promise<string> {
         const filePath = `/${folderName ? folderName + '/' : ''}${fileName}`;
-            
+
         await this.graphClient.api(`/me/drive/root:/${filePath}:/content`).put(content);
 
         return 'Text saved to OneDrive successfully.';
@@ -162,5 +163,18 @@ export class MicrosoftOneDrive implements StorageDriver {
         }
 
         return result;
+    }
+
+
+    async *listFilesIterator(folderName: string, chunkSize: number): AsyncIterableIterator<string[]> {
+        let nextLink: string | undefined = `/me/drive/root:/${folderName}:/children?top=${chunkSize}`;
+
+        do {
+            const response = await this.graphClient.api(nextLink).get();
+            nextLink = response['@odata.nextLink'];
+
+            const files = response.value?.map((file: any) => file.name) || [];
+            yield files;
+        } while (nextLink);
     }
 }
