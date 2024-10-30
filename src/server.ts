@@ -52,6 +52,9 @@ switch (process.env.HANDLER) {
   case DriversEnum.googleCloudStorage:
     driversFactory = new DriversFactory(DriversEnum.googleCloudStorage);
     break;
+  case DriversEnum.microsoftAzure:
+    driversFactory = new DriversFactory(DriversEnum.microsoftAzure);
+    break;
   default:
     throw new Error("Invalid handler");
 }

@@ -3,5 +3,6 @@ export enum DriversEnum {
   googleCloudStorage = 'googleCloudStorage',
   oneDrive = 'oneDrive',
   amazonS3 = 'amazonS3',
-  dropbox = 'dropbox'
+  dropbox = 'dropbox',
+  microsoftAzure = 'microsoftAzure'
 }

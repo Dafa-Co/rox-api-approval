@@ -1,3 +1,4 @@
+import { MicrosoftAzure } from './../Drivers/MicrosoftAzure';
 import { GoogleDrive } from "./../Drivers/GoogleDrive";
 import { DriversEnum } from "../Enums/DriversEnum";
 import { StorageDriver } from "../Interfaces/StorageDriver";
@@ -32,6 +33,8 @@ export class DriversFactory {
         return new DropboxStorage();
       case DriversEnum.googleCloudStorage:
         return new GoogleCloudStorage();
+      case DriversEnum.microsoftAzure:
+        return new MicrosoftAzure();
     }
   }
 
