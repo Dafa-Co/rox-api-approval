@@ -16,7 +16,7 @@ export let API_KEY = process.env.API_KEY;
 
 const app = express();
 app.use(express.json());
-//app.use(checkApiKey); // Apply API Key check globally
+app.use(checkApiKey); // Apply API Key check globally
 
 // Health Check Endpoint
 app.get("/healthz", (req: Request, res: Response) => {
@@ -51,6 +51,9 @@ switch (process.env.HANDLER) {
     break;
   case DriversEnum.googleCloudStorage:
     driversFactory = new DriversFactory(DriversEnum.googleCloudStorage);
+    break;
+  case DriversEnum.microsoftAzure:
+    driversFactory = new DriversFactory(DriversEnum.microsoftAzure);
     break;
   default:
     throw new Error("Invalid handler");

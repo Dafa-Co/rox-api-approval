@@ -1,12 +1,10 @@
 # Steps to run the app with google drive integration
 
 - Enter on google cloud console : https://console.cloud.google.com
+
 - Sign in or create new account
+
 - create new project and fill the data then click create
-
-  ![alt text](googleDriveImages/init.png)
-
-  ![alt text](googleDriveImages/start.png)
 
   ![alt text](googleDriveImages/image.png)
 
@@ -56,7 +54,7 @@
 
   ![alt text](googleDriveImages/image-11.png)
 
-- now the most important part is to set Authorised redirect URIs the URI your will enter must end with auth-redirect ex:https://yourdomain:portnumber/auth-redirect
+- now the most important part is to set Authorised redirect URIs the URI your will enter must end with auth-redirect ex:https://yourdomain/auth-redirect
 
   ![alt text](googleDriveImages/image-12.png)
 
