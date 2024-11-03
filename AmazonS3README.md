@@ -24,6 +24,8 @@
 
 6. Click Create bucket at the bottom to create your S3 bucket.
 
+   ![alt text](amazonImages/image.png)
+
    ![alt text](amazonImages/image-1.png)
 
 # Step 3: Set Bucket Permissions (Optional)
