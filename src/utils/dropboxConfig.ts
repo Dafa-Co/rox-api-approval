@@ -5,6 +5,9 @@ import * as process from 'process';
 dotenv.config();
 
 const redirectUri = `${process.env.DOMAIN}:${process.env.PORT}/auth-redirect`;
+const dropboxAccessTokenSchema = Joi.string()
+    .required()
+    .messages(clientErrObj('Dropbox access token'));
 const dropboxClientIdSchema = Joi.string()
     .required()
     .messages(clientErrObj('Dropbox client id'));
@@ -12,14 +15,16 @@ const dropboxClientSecretSchema = Joi.string()
     .required()
     .messages(clientErrObj('Dropbox client secret'));
 
-let dropboxClientId : string, dropboxClientSecret : string, dropboxConfig: any;
+let dropboxClientId : string, dropboxClientSecret : string, dropboxConfig: any, dropboxAccessToken : string
 
 const validateCredentials = () => {
+    dropboxAccessToken = Joi.attempt(process.env.DROPBOX_ACCESS_TOKEN, dropboxAccessTokenSchema);
     dropboxClientId = Joi.attempt(process.env.DROPBOX_CLIENT_ID, dropboxClientIdSchema);
     dropboxClientSecret = Joi.attempt(process.env.DROPBOX_CLIENT_SECRET, dropboxClientSecretSchema);
     dropboxConfig = {
+        accessToken: dropboxAccessToken,
         clientId: dropboxClientId,
-        clientSecret: dropboxClientSecret,
+        clientSecret: dropboxClientSecret
     };
 }
 
@@ -40,10 +45,11 @@ interface ITokens {
 }
 
 export {
-  dropboxClientId,
-  dropboxClientSecret,
-  dropboxConfig,
-  ITokens,
-  redirectUri,
-  validateCredentials
+    dropboxAccessToken,
+    dropboxClientId,
+    dropboxClientSecret,
+    dropboxConfig,
+    ITokens,
+    redirectUri,
+    validateCredentials
 };
