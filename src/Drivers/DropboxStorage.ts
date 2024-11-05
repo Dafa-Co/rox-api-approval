@@ -23,12 +23,12 @@ export class DropboxStorage implements StorageDriver {
   }
 
   private async initializeAccessToken() {
-    const response = await this.refreshAccessToken(this.tokens.refresh_token);
+    //const response = await this.refreshAccessToken(this.tokens.refresh_token);
     this.dbx = new Dropbox({
-      accessToken: response.data.access_token, // Set the new access token
+      accessToken: dropboxConfig.accessToken,
       clientId: dropboxConfig.clientId,
       clientSecret: dropboxConfig.clientSecret,
-    });
+    });    
   }
 
   private async refreshAccessToken(refreshToken: string): Promise<any> {
