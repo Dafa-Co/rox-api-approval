@@ -1,14 +1,16 @@
 services:
   api-approval:
+    # image: roxcustody/amazons3
     build: .
     volumes:
       - ./:/usr/src/app
     networks:
       - custody_global_network
     extra_hosts:
-      - "waer.web_server:172.18.0.8"
+      - "rox.web_server:172.18.0.4"
     env_file:
       - .env
+
     ports:
       - "3005:3000"
 

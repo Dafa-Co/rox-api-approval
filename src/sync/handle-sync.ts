@@ -61,7 +61,7 @@ export async function handleSync(
     const prefixedEncryptedKey = Buffer.concat([Buffer.from(prefix), encryptedKey]);
     res.write(prefixedEncryptedKey);
 
-    const encryptor = new EncryptionStream(iv, aesKey);
+    // const encryptor = new EncryptionStream(iv, aesKey);
 
     // Handle client disconnection properly
     res.on("close", () => {
@@ -74,7 +74,7 @@ export async function handleSync(
       fileStream,           // Source stream from files
       downloader,           // Concurrent file downloader (limit: 10)
       sha256Calculator,     // Calculate SHA-256 hash
-      encryptor,            // Encrypt the data
+      // encryptor,            // Encrypt the data
       res                   // Send the encrypted data to the client
     );
 

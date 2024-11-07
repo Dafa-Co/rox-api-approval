@@ -9,6 +9,7 @@ import { checkOrigin } from "./utils/middlewares/check-origins.middleware";
 import { IApiApprovalSyncInterface } from "./Interfaces/api-approval-sync.interface";
 import { handleSync } from "./sync/handle-sync";
 import { constants, publicEncrypt } from "crypto";
+import { gracefulShutdown, performHealthCheck } from "./health-check/health-check";
 
 dotenv.config();
 
@@ -189,7 +190,7 @@ app.post(
         vaultName,
       };
 
-    await  handleSync(res, payload, driversFactory);
+      await handleSync(res, payload, driversFactory);
     } catch (error) {
       console.error("Failed to process sync request:", error);
       res.status(500).json({ error: "Failed to process sync request" });
@@ -217,82 +218,25 @@ app.use((err: any, req: Request, res: Response, next: NextFunction) => {
 
 app.listen(port, async () => {
   console.log(`Server running at ${process.env.DOMAIN}:${port}`);
-  const custodyUrl = process.env.CUSTODY_URL;
+
   try {
-    const healthCheck = async () => {
-      try {
-        const response = await fetch(
-          `${custodyUrl}/backup-storage-integration/api-approval-health-check`,
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "x-verify-key": API_KEY,
-            },
-            body: JSON.stringify({ url: process.env.URL }),
-          }
-        );
 
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
+    const ContainedHealthCheck = () => performHealthCheck(driversFactory);
 
-        const data = await response.json();
-        console.log("Vault verification response:", data);
-      } catch (error) {
-        console.error("Failed to verify vault:", error);
-      }
-    };
+    await ContainedHealthCheck();
 
-    // Initial health check on server start
-    await healthCheck();
-
-    // Set interval to perform health check every 60 seconds
-    setInterval(healthCheck, 30000);
+    setInterval(ContainedHealthCheck, 30000); // Run health check every 30 seconds
   } catch (error) {
-    console.error("Failed to verify vault:", error);
+    console.error("Initial health check failed:", error);
   }
 });
 
-// Function to handle graceful shutdown
-async function gracefulShutdown(signal: string) {
-  console.log(`Received ${signal}. Shutting down gracefully.`);
-  const custodyUrl = process.env.CUSTODY_URL;
-  try {
-    // Notify an API that the server is going down
-    const response = await fetch(
-      `${custodyUrl}/backup-storage-integration/inactive-vault`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-verify-key": API_KEY,
-        },
-        body: JSON.stringify({ message: "Server is going down" }),
-      }
-    );
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    const data = await response.json();
-    console.log("Shutdown notification response:", data);
-  } catch (error) {
-    console.error("Failed to notify shutdown:", error);
-  } finally {
-    console.log("Closing server...");
-    process.exit(0);
-  }
-}
-
+// Handle uncaught exceptions
 process.on("uncaughtException", (err) => {
   console.error("Uncaught Exception:", err);
   process.exit(1);
 });
 
-// Listen for TERM signal .e.g. kill
+// Listen for TERM signal (e.g., kill) and INT signal (e.g., Ctrl-C)
 process.on("SIGTERM", () => gracefulShutdown("SIGTERM"));
-
-// Listen for INT signal e.g. Ctrl-C
 process.on("SIGINT", () => gracefulShutdown("SIGINT"));

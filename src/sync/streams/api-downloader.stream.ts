@@ -7,8 +7,8 @@ export class ApiApprovalKeyDownloader extends Transform {
   private driversFactory: DriversFactory;
   private folderName: string;
   private concurrency: number;
-  private continueCb: () => void;
-  private terminateCb: () => void;
+  private continueCb: (() => void) | null = null;
+  private terminateCb: (() => void) | null = null;
   private runningProcesses: number = 0;
   private clientConnected: boolean;
 
@@ -39,6 +39,7 @@ export class ApiApprovalKeyDownloader extends Transform {
    */
   _onComplete(err: any) {
     this.runningProcesses--;
+
     if (err) {
       console.error("Error during transformation:", err);
       if (this.clientConnected) {
@@ -46,9 +47,12 @@ export class ApiApprovalKeyDownloader extends Transform {
         this.terminateCb && this.terminateCb();
       }
     }
+
     const tempCb = this.continueCb;
     this.continueCb = null;
     tempCb && tempCb();
+
+
     if (this.runningProcesses === 0) {
       this.terminateCb && this.terminateCb();
     }
@@ -76,7 +80,17 @@ export class ApiApprovalKeyDownloader extends Transform {
       push(stringObj);
       onComplete(null);
     } catch (error) {
-      onComplete(error);
+      if (error.Code === 'NoSuchKey') {
+        // Indicate the file does not exist in the stream data
+        const errorMessage = {
+          keyId: file,
+          content: "File not found",
+        };
+        push(JSON.stringify(errorMessage)); // Push "file not found" message
+        onComplete(null); // Complete without error
+      } else {
+        onComplete(error); // Other errors should proceed as usual
+      }
     }
   }
 
