@@ -81,7 +81,7 @@ app.get("/login", async (req, res) => {
 
 app.post(
   "/get-key",
-  query("vault_name").notEmpty(),
+  query("folder_name").notEmpty(),
   body("key_id").notEmpty().isNumeric(),
   catchAsync(async (req: Request, res: Response) => {
     const result = validationResult(req);
@@ -96,7 +96,7 @@ app.post(
       return res.status(422).send(Object.fromEntries(entries));
     }
 
-    const folderName = req.query.vault_name as string;
+    const folderName = req.query.folder_name as string;
     const fileName = req.body.key_id as string;
 
     const content = await driversFactory.getKey(folderName, fileName);
@@ -106,7 +106,7 @@ app.post(
 
 app.post(
   "/set-key",
-  body("vault_name").notEmpty(),
+  query("folder_name").notEmpty(),
   body("key_id").notEmpty().isNumeric(),
   body("key").notEmpty().isString(),
   catchAsync(async (req: Request, res: Response) => {
@@ -122,7 +122,7 @@ app.post(
       return res.status(422).send(Object.fromEntries(entries));
     }
 
-    const folderName = req.body.vault_name as string;
+    const folderName = req.body.folder_name as string;
     const fileName = req.body.key_id as string;
     const content = req.body.key as string;
     try {
@@ -144,9 +144,9 @@ app.post(
   "/sync-request",
   [
     // Validation middleware for incoming data
-    query("vault_name")
+    query("folder_name")
       .notEmpty()
-      .withMessage("vault_name query parameter is required"),
+      .withMessage("folder_name query parameter is required"),
     body("keysIds")
       .isArray({ min: 1 })
       .withMessage("keysIds must be an array of key IDs"),
@@ -166,7 +166,7 @@ app.post(
     }
 
     // Extract the validated data from the request
-    const vaultName = req.query.vault_name as string;
+    const vaultName = req.query.folder_name as string;
     const { keysIds, publicKey, syncId } = req.body;
 
     // validate the public key

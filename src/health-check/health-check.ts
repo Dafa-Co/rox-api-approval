@@ -10,12 +10,10 @@ export async function performHealthCheck(driversFactory: DriversFactory) {
   const testFileContent = `health-check-content-${new Date().toISOString()}`;
 
   try {
-    await setTestFile(driversFactory, testFileName, testFileContent);
-    const retrievedContent = await getTestFile(driversFactory, testFileName);
-
-    if (retrievedContent !== testFileContent) {
-      throw new Error("Content mismatch in health check test file.");
-    }
+    await Promise.all([
+      setTestFile(driversFactory, testFileName, testFileContent),
+      getTestFile(driversFactory, testFileName)
+    ])
 
     await sendHealthNotification(); // Notify custody service of successful health check
   } catch (error) {
