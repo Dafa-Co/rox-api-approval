@@ -122,7 +122,7 @@ app.post(
       return res.status(422).send(Object.fromEntries(entries));
     }
 
-    const folderName = req.body.folder_name as string;
+    const folderName = req.query.folder_name as string;
     const fileName = req.body.key_id as string;
     const content = req.body.key as string;
     try {
