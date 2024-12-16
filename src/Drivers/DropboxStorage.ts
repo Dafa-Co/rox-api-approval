@@ -10,16 +10,25 @@ import {
 } from "../utils/dropboxConfig";
 import { TOKEN_PATH } from "../utils/constants";
 import { Dropbox } from "dropbox";
+import path from "path";
+import * as fs from 'fs';
 
 export class DropboxStorage implements StorageDriver {
   private dbx: any; //Dropbox;
-  private tokens: ITokens;
 
   constructor() {
     validateCredentials();
     this.dbx = new Dropbox(dropboxConfig);
-    this.tokens = JSON.parse(readFileSync(TOKEN_PATH, "utf-8")) as ITokens;
+    //this.tokens = JSON.parse(readFileSync(TOKEN_PATH, "utf-8")) as ITokens;
+    
     this.initializeAccessToken();
+  }
+
+  init() {
+    const rootPath = process.cwd();
+    const filePath = `${rootPath}/${TOKEN_PATH}`;
+
+    return fs.existsSync(filePath);
   }
 
   private async initializeAccessToken() {
@@ -29,36 +38,6 @@ export class DropboxStorage implements StorageDriver {
       clientId: dropboxConfig.clientId,
       clientSecret: dropboxConfig.clientSecret,
     });    
-  }
-
-  private async refreshAccessToken(refreshToken: string): Promise<any> {
-    const response = await axios.post(
-      "https://api.dropboxapi.com/oauth2/token",
-      new URLSearchParams({
-        grant_type: "refresh_token",
-        refresh_token: this.tokens.refresh_token,
-      }).toString(),
-      {
-        headers: {
-          "Content-Type": "application/x-www-form-urlencoded",
-          Authorization: `Basic ${Buffer.from(
-            `${dropboxConfig.clientId}:${dropboxConfig.clientSecret}`
-          ).toString("base64")}`,
-        },
-      }
-    );
-
-    this.saveToken({
-      access_token: response.data.access_token,
-      account_id: this.tokens.account_id,
-      expires_in: response.data.expires_in,
-      refresh_token: this.tokens.refresh_token,
-      scope: this.tokens.scope,
-      uid: this.tokens.uid,
-      token_type: response.data.token_type,
-    });
-
-    return response;
   }
 
   async getTokens(code: string): Promise<any> {
