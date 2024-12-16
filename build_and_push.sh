@@ -25,7 +25,7 @@ build_and_push() {
 }
 
 # List of services
-services=("amazons3" "google_drive" "one_drive" "dropbox", "google_cloud_storage", "azure_storage")
+services=("amazons3" "google_drive" "one_drive" "dropbox" "google_cloud_storage" "azure_storage")
 
 # Loop through services and build/push each Docker image
 for service in "${services[@]}"; do
