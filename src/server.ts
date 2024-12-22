@@ -124,7 +124,7 @@ app.post(
 
     const folderName = req.query.folder_name as string;
     const fileName = req.body.key_id as string;
-    const content = req.body.key as string; console.log(`folderName ${folderName} `, `fileName ${fileName} `, `content ${content} `);
+    const content = req.body.key as string;
     
     try {
       const response = await driversFactory.setKey(

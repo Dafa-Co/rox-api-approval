@@ -13,7 +13,7 @@ const projectIdSchema = Joi.string()
 
 let bucketName: string, projectId: string
 
-const validateCredentials = () => { console.log('asasas', process.env.GOOGLEBUCKETNAME);
+const validateCredentials = () => {
 
     bucketName = Joi.attempt(process.env.GOOGLEBUCKETNAME, bucketNameSchema);
     projectId = Joi.attempt(process.env.GOOGLEBUCKETKEY, projectIdSchema);
