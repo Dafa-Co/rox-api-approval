@@ -12,7 +12,7 @@ export class GoogleCloudStorage implements StorageDriver {
         validateCredentials();
         this.storage = new Storage({
             projectId: projectId,
-            keyFilename: path.resolve(__dirname, './../../google-cloud-storage.json'),
+            keyFilename: path.resolve(__dirname, './../../credentials.json'),
         });
         this.bucket = this.storage.bucket(bucketName);
     }
