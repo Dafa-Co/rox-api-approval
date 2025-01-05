@@ -2,8 +2,8 @@ services:
   api-approval:
     # image: roxcustody/amazons3
     build: .
-    volumes:
-      - ./:/usr/src/app
+    # volumes:
+    #   - ./:/usr/src/app
     networks:
       - custody_global_network
     extra_hosts:
@@ -17,4 +17,4 @@ services:
 networks:
   custody_global_network:
     external: true
-    name: services_custody_global_network
+    name: custody_global_network

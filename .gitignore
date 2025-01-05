@@ -3,6 +3,5 @@
 package-lock.json
 credentials.json
 tokens.json
-tsconfig.json
 
 dist/*

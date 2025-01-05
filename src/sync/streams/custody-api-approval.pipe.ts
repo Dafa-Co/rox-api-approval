@@ -32,7 +32,7 @@ export class CombinedProcessingStream extends Transform {
     );
     const sha256Calculator = new SHA256CalculatorStream();
     const compressor = createGzip(); // Compress with Gzip
-    const encryptor = new EncryptionStream(this.publicKey); // Encrypt the data
+    // const encryptor = new EncryptionStream(this.publicKey,); // Encrypt the data
 
     // Use pipelineAsync to connect streams with proper backpressure handling
     await pipelineAsync(
@@ -40,7 +40,7 @@ export class CombinedProcessingStream extends Transform {
       downloader,     // Download files concurrently
       sha256Calculator, // Calculate SHA-256 hash
       compressor,     // Compress the data
-      encryptor,      // Encrypt the data
+      // encryptor,      // Encrypt the data
       this            // Output the encrypted data
     );
   }
