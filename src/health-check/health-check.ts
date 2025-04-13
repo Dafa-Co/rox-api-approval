@@ -1,19 +1,24 @@
 import fetch from "node-fetch";
-import { DriversFactory } from "src/Classes/DriversFactory";
+import { DriversFactory } from "../Classes/DriversFactory";
+import { HEALTH_CHECK_KEY_STORAGE_KEY } from "../constants/communication.constants";
+import { StorageService } from "../utils/storage.service";
 
 const custodyUrl = process.env.CUSTODY_URL;
-const apiKey = process.env.API_KEY;
 const serverUrl = process.env.URL;
 
-export async function performHealthCheck(driversFactory: DriversFactory) {
+export async function testStorageAvailability(driversFactory: DriversFactory) {
   const testFileName = "health-check-test-file";
   const testFileContent = `health-check-content-${new Date().toISOString()}`;
 
+  await Promise.all([
+    setTestFile(driversFactory, testFileName, testFileContent),
+    getTestFile(driversFactory, testFileName)
+  ])
+}
+
+export async function performHealthCheck(driversFactory: DriversFactory) {
   try {
-    await Promise.all([
-      setTestFile(driversFactory, testFileName, testFileContent),
-      getTestFile(driversFactory, testFileName)
-    ])
+    await testStorageAvailability(driversFactory);
 
     await sendHealthNotification(); // Notify custody service of successful health check
   } catch (error) {
@@ -44,13 +49,14 @@ async function getTestFile(driversFactory: DriversFactory, fileName: string): Pr
 // Notify the custody service that the system is healthy
 async function sendHealthNotification() {
   try {
+    const [healthCheckKey] = await new StorageService().get(HEALTH_CHECK_KEY_STORAGE_KEY, false);
     const response = await fetch(
       `${custodyUrl}/backup-storage-integration/api-approval-health-check`,
       {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "x-verify-key": apiKey,
+          'x-health-check-key': healthCheckKey,
         },
         body: JSON.stringify({ url: serverUrl }),
       }
@@ -70,13 +76,14 @@ async function sendHealthNotification() {
 // Notify the custody service that the system is inactive
 async function sendInactiveNotification(message: string) {
   try {
+    const [healthCheckKey] = await new StorageService().get(HEALTH_CHECK_KEY_STORAGE_KEY, false);
     const response = await fetch(
       `${custodyUrl}/backup-storage-integration/inactive-vault`,
       {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "x-verify-key": apiKey,
+          'x-health-check-key': healthCheckKey,
         },
         body: JSON.stringify({ message }),
       }
