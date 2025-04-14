@@ -39,13 +39,3 @@ export function decryptAES256(encryptedPayload, key) {
 
     return decrypted;
 }
-
-// // Example usage:
-// const key = crypto.randomBytes(32); // 256-bit key
-// const plaintext = 'This is a secret message!';
-
-// const encrypted = encryptSync(plaintext, key);
-// console.log('Encrypted (sync):', encrypted);
-
-// const decrypted = decryptSync(encrypted, key);
-// console.log('Decrypted (sync):', decrypted);

@@ -19,7 +19,6 @@ export let API_KEY = process.env.API_KEY;
 
 const app = express();
 app.use(express.json());
-// app.use(checkApiKey); // Apply API Key check globally
 
 // Health Check Endpoint
 app.post(
@@ -98,7 +97,7 @@ app.post(
     const folderName = req.query.folder_name as string;
     const fileName = req.body.key_id as string;
 
-    console.log("get-key endpoint hit", folderName, fileName);
+    console.info("get-key endpoint called");
     const content = await driversFactory.getKey(folderName, fileName);
 
     try {
@@ -189,11 +188,11 @@ app.listen(port, async () => {
   }, FortyFiveMinutes); // Run handshaking every 45 minutes
 
   try {
-    const ContainedHealthCheck = () => performHealthCheck(driversFactory);
+    const containedHealthCheck = () => performHealthCheck(driversFactory);
 
-    await ContainedHealthCheck();
+    await containedHealthCheck();
 
-    setInterval(ContainedHealthCheck, 30000); // Run health check every 30 seconds
+    setInterval(containedHealthCheck, 30000); // Run health check every 30 seconds
   } catch (error) {
     console.error("Initial health check failed:", error);
   }

@@ -84,14 +84,7 @@ export class StorageService {
   }
 
   private async updateDiskStorage(key: string, newEntry: string): Promise<void> {
-    let existingEntries: string[] = [];
-
-    try {
-      const data = await readFile(this.filePath, 'utf8');
-      existingEntries = data.trim().split('\n').filter(entry => entry.trim());
-    } catch (error) {
-      if (error.code !== 'ENOENT') throw error;
-    }
+    const existingEntries = await this.getEntriesFromDisk();
 
     const filteredEntries: string[] = [];
     for (const entry of existingEntries) {
@@ -107,10 +100,14 @@ export class StorageService {
     await writeFile(this.filePath, filteredEntries.join('\n') + '\n', { mode: 0o600 });
   }
 
-  private async readFromDisk(key: string): Promise<any> {
+  private async getEntriesFromDisk(): Promise<string[]> {
     await access(this.filePath, constants.F_OK);
     const data = await readFile(this.filePath, 'utf8');
-    const entries = data.trim().split('\n').filter(entry => entry.trim());
+    return data.trim().split('\n').filter(entry => entry.trim());
+  }
+
+  private async readFromDisk(key: string): Promise<any> {
+    const entries = await this.getEntriesFromDisk();
 
     for (const entry of entries.reverse()) {
       try {
@@ -149,9 +146,7 @@ export class StorageService {
 
   private async initialize(): Promise<void> {
     try {
-      await access(this.filePath, constants.F_OK);
-      const data = await readFile(this.filePath, 'utf8');
-      const entries = data.trim().split('\n').filter(entry => entry.trim());
+      const entries = await this.getEntriesFromDisk();
 
       for (const entry of entries) {
         try {
