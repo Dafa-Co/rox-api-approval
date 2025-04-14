@@ -165,6 +165,7 @@ read -p "Enter your self custody manager (SCM) key: " api_key
 # Write essential environment variables to .env
 write_to_env_file "API_KEY" "$api_key"
 write_to_env_file "DOMAIN" "$user_domain"
+write_to_env_file "SECURE_STORE_SECRET" "$(openssl rand -base64 32)"
 
 # Automatically select an available port
 user_port=$(find_available_port)
