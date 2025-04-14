@@ -7,8 +7,11 @@ import * as dotenv from "dotenv";
 import { checkApiKey } from "./utils/middlewares/api-key-auth.middleware";
 import { checkOrigin } from "./utils/middlewares/check-origins.middleware";
 import { IApiApprovalSyncInterface } from "./Interfaces/api-approval-sync.interface";
-import { handleSync } from "./sync/handle-sync";
 import { constants, publicEncrypt } from "crypto";
+import { gracefulShutdown, performHealthCheck, testStorageAvailability } from "./health-check/health-check";
+import { handshaking } from "./handshaking/handshaking";
+import { decryptRequest } from "./utils/middlewares/decrypt-request.middleware";
+import { encryptPayloadWithSession } from "./utils/encrypt-payload-with-session";
 
 dotenv.config();
 
@@ -16,20 +19,15 @@ export let API_KEY = process.env.API_KEY;
 
 const app = express();
 app.use(express.json());
-app.use(checkApiKey); // Apply API Key check globally
 
 // Health Check Endpoint
-app.get("/healthz", (req: Request, res: Response) => {
-  res.status(200).json({ status: "OK", message: "Service is up and running." });
-});
+app.post(
+  "/healthz", 
+  async (req: Request, res: Response) => {
+    console.info("Health check endpoint hit", req.body);
 
-// Update API Key Endpoint
-app.post("/update-api-key", (req: Request, res: Response) => {
-  // Assuming body contains newKey and we have a method to update it
-  const { newKey } = req.body;
-  API_KEY = newKey;
-  res.status(200).json({ message: "API Key updated successfully." });
-});
+    res.status(200).json({ status: "OK", message: "Service is up and running." });
+  });
 
 app.use(checkOrigin);
 
@@ -80,7 +78,8 @@ app.get("/login", async (req, res) => {
 
 app.post(
   "/get-key",
-  query("vault_name").notEmpty(),
+  decryptRequest,
+  query("folder_name").notEmpty(),
   body("key_id").notEmpty().isNumeric(),
   catchAsync(async (req: Request, res: Response) => {
     const result = validationResult(req);
@@ -95,17 +94,25 @@ app.post(
       return res.status(422).send(Object.fromEntries(entries));
     }
 
-    const folderName = req.query.vault_name as string;
+    const folderName = req.query.folder_name as string;
     const fileName = req.body.key_id as string;
 
+    console.info("get-key endpoint called");
     const content = await driversFactory.getKey(folderName, fileName);
-    res.json({ private_key: content });
+
+    try {
+      const encryptedContent = await encryptPayloadWithSession({ private_key: content });
+      res.status(200).json(encryptedContent);
+    } catch (error) {
+      return res.status(401).send("Not authorized");
+    }
   })
 );
 
 app.post(
   "/set-key",
-  body("vault_name").notEmpty(),
+  query("folder_name").notEmpty(),
+  decryptRequest,
   body("key_id").notEmpty().isNumeric(),
   body("key").notEmpty().isString(),
   catchAsync(async (req: Request, res: Response) => {
@@ -121,11 +128,12 @@ app.post(
       return res.status(422).send(Object.fromEntries(entries));
     }
 
-    const folderName = req.body.vault_name as string;
+    const folderName = req.query.folder_name as string;
     const fileName = req.body.key_id as string;
     const content = req.body.key as string;
+    
     try {
-      const response = await driversFactory.setKey(
+      await driversFactory.setKey(
         folderName,
         fileName,
         content
@@ -136,64 +144,6 @@ app.post(
     }
 
     res.status(200).send(`Key uploaded successfully`);
-  })
-);
-
-app.post(
-  "/sync-request",
-  [
-    // Validation middleware for incoming data
-    query("vault_name")
-      .notEmpty()
-      .withMessage("vault_name query parameter is required"),
-    body("keysIds")
-      .isArray({ min: 1 })
-      .withMessage("keysIds must be an array of key IDs"),
-    body("publicKey")
-      .notEmpty()
-      .withMessage("publicKey is required")
-      .matches(
-        /-----BEGIN PUBLIC KEY-----\n([A-Za-z0-9+/=\n]+)\n-----END PUBLIC KEY-----/
-      )
-      .withMessage("publicKey must be in a valid PEM format"),
-  ],
-  catchAsync(async (req: Request, res: Response) => {
-    // Handle validation errors
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(422).json({ errors: errors.array() });
-    }
-
-    // Extract the validated data from the request
-    const vaultName = req.query.vault_name as string;
-    const { keysIds, publicKey, syncId } = req.body;
-
-    // validate the public key
-    try {
-      // Validate the public key before starting the stream
-      publicEncrypt(
-        { key: publicKey, padding: constants.RSA_PKCS1_OAEP_PADDING },
-        Buffer.from("test")
-      );
-    } catch (error) {
-      console.error("Invalid public key:", error);
-      return res.status(400).json({ error: "Invalid public key format" });
-    }
-
-    // You can now process the data, e.g., insert it into your database, send to another service, etc.
-    try {
-      const payload: IApiApprovalSyncInterface = {
-        keysIds,
-        publicKey,
-        syncId,
-        vaultName,
-      };
-
-    await  handleSync(res, payload, driversFactory);
-    } catch (error) {
-      console.error("Failed to process sync request:", error);
-      res.status(500).json({ error: "Failed to process sync request" });
-    }
   })
 );
 
@@ -217,82 +167,42 @@ app.use((err: any, req: Request, res: Response, next: NextFunction) => {
 
 app.listen(port, async () => {
   console.log(`Server running at ${process.env.DOMAIN}:${port}`);
-  const custodyUrl = process.env.CUSTODY_URL;
+
+  const containedHandshaking = async () => {
+    try {
+      await handshaking();
+    } catch (error) {
+      console.error("Failed to handshake:", error);
+      setTimeout(() => {
+        console.log("Retrying handshaking...");
+        containedHandshaking();
+      }, 20_000); // Retry after 20 second
+    }
+  }
+
+  await containedHandshaking();
+
+  const FortyFiveMinutes = 45 * 60 * 1000; // 45 minutes in milliseconds
+  setInterval(async () => {
+    await containedHandshaking();
+  }, FortyFiveMinutes); // Run handshaking every 45 minutes
+
   try {
-    const healthCheck = async () => {
-      try {
-        const response = await fetch(
-          `${custodyUrl}/backup-storage-integration/api-approval-health-check`,
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "x-verify-key": API_KEY,
-            },
-            body: JSON.stringify({ url: process.env.URL }),
-          }
-        );
+    const containedHealthCheck = () => performHealthCheck(driversFactory);
 
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
+    await containedHealthCheck();
 
-        const data = await response.json();
-        console.log("Vault verification response:", data);
-      } catch (error) {
-        console.error("Failed to verify vault:", error);
-      }
-    };
-
-    // Initial health check on server start
-    await healthCheck();
-
-    // Set interval to perform health check every 60 seconds
-    setInterval(healthCheck, 30000);
+    setInterval(containedHealthCheck, 30000); // Run health check every 30 seconds
   } catch (error) {
-    console.error("Failed to verify vault:", error);
+    console.error("Initial health check failed:", error);
   }
 });
 
-// Function to handle graceful shutdown
-async function gracefulShutdown(signal: string) {
-  console.log(`Received ${signal}. Shutting down gracefully.`);
-  const custodyUrl = process.env.CUSTODY_URL;
-  try {
-    // Notify an API that the server is going down
-    const response = await fetch(
-      `${custodyUrl}/backup-storage-integration/inactive-vault`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-verify-key": API_KEY,
-        },
-        body: JSON.stringify({ message: "Server is going down" }),
-      }
-    );
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    const data = await response.json();
-    console.log("Shutdown notification response:", data);
-  } catch (error) {
-    console.error("Failed to notify shutdown:", error);
-  } finally {
-    console.log("Closing server...");
-    process.exit(0);
-  }
-}
-
+// Handle uncaught exceptions
 process.on("uncaughtException", (err) => {
   console.error("Uncaught Exception:", err);
-  process.exit(1);
 });
 
-// Listen for TERM signal .e.g. kill
+// Listen for TERM signal (e.g., kill) and INT signal (e.g., Ctrl-C)
 process.on("SIGTERM", () => gracefulShutdown("SIGTERM"));
-
-// Listen for INT signal e.g. Ctrl-C
 process.on("SIGINT", () => gracefulShutdown("SIGINT"));

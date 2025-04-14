@@ -108,7 +108,7 @@ export class MicrosoftOneDrive implements StorageDriver {
         const filePath = `/${folderName}/${fileName}`;
         let response = await this.graphClient.api(`/me/drive/root:/${filePath}:/content`).get();
 
-        return await this.streamToString(response); console.log('response', response);;
+        return await this.streamToString(response);
     }
 
     async setKey(folderName: string, fileName: string, content: string): Promise<string> {
