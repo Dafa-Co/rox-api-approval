@@ -23,56 +23,69 @@ async function getVerifyKey() {
     return verifyKey;
 }
 
+let isHandshakingRunning = false;
 export async function handshaking() {
-    const verifyKey = await getVerifyKey();
-    const storageService = new StorageService();
-    const keys = await initializeKeys();
-
-    const communicationKeys = await initializeKeys();
-    const requestResponse: {
-        id: number,
-        key: string,
-    } = await sendCustodyRequest({
-        path: 'bridge-server/request-secure-connection',
-        body: {
-            publicKey: communicationKeys.publicKey,
-        },
-        includeVerifyKeyInBody: false,
-    })
-
-    const key = crypto.privateDecrypt(
-        keys.privateKey,
-        Buffer.from(requestResponse.key, 'base64')
-    ).toString('utf-8');
-
-    const encryptedPayload = encryptAES256(
-        JSON.stringify({
-            publicKey: keys.publicKey,
-            serverUrl,
-            verifyKey,
-        }),
-        key
-    );
-
-    const response: { encryptedResponse: IEncryptionResponse, healthCheckKey: string } = await sendCustodyRequest({
-        includeVerifyKeyInBody: false,
-        path: 'bridge-server/handshake',
-        body: {
-            encryptedPayload: encryptedPayload,
-            encryptionId: requestResponse.id,
+    try {
+        if (isHandshakingRunning) {
+            console.info('Handshaking already completed, skipping...');
+            return;
         }
-    });
+        isHandshakingRunning = true;
 
-    const decryptedResponse: IHandshakingDecryptedResponse = JSON.parse(decryptAES256(
-        response.encryptedResponse,
-        key
-    ));
+        const verifyKey = await getVerifyKey();
+        const storageService = new StorageService();
+        const keys = await initializeKeys();
 
-    await Promise.all([
-        storageService.put(SESSION_STORAGE_KEY, decryptedResponse.sessionKey, false, 2, decryptedResponse.sessionExpirationDate),
-        storageService.put(VERIFY_KEY_STORAGE_KEY, decryptedResponse.verifyKey, true),
-        storageService.put(HEALTH_CHECK_KEY_STORAGE_KEY, response.healthCheckKey, false)
-    ]);
+        const communicationKeys = await initializeKeys();
+        const requestResponse: {
+            id: number,
+            key: string,
+        } = await sendCustodyRequest({
+            path: 'bridge-server/request-secure-connection',
+            body: {
+                publicKey: communicationKeys.publicKey,
+            },
+            includeVerifyKeyInBody: false,
+        })
 
-    console.info('Handshake has been completed successfully at', new Date().toISOString());
+        const key = crypto.privateDecrypt(
+            keys.privateKey,
+            Buffer.from(requestResponse.key, 'base64')
+        ).toString('utf-8');
+
+        const encryptedPayload = encryptAES256(
+            JSON.stringify({
+                publicKey: keys.publicKey,
+                serverUrl,
+                verifyKey,
+            }),
+            key
+        );
+
+        const response: { encryptedResponse: IEncryptionResponse, healthCheckKey: string } = await sendCustodyRequest({
+            includeVerifyKeyInBody: false,
+            path: 'bridge-server/handshake',
+            body: {
+                encryptedPayload: encryptedPayload,
+                encryptionId: requestResponse.id,
+            }
+        });
+
+        const decryptedResponse: IHandshakingDecryptedResponse = JSON.parse(decryptAES256(
+            response.encryptedResponse,
+            key
+        ));
+
+        await Promise.all([
+            storageService.put(SESSION_STORAGE_KEY, decryptedResponse.sessionKey, false, 2, decryptedResponse.sessionExpirationDate),
+            storageService.put(VERIFY_KEY_STORAGE_KEY, decryptedResponse.verifyKey, true),
+            storageService.put(HEALTH_CHECK_KEY_STORAGE_KEY, response.healthCheckKey, false)
+        ]);
+
+        console.info('Handshake has been completed successfully at', new Date().toISOString());
+        isHandshakingRunning = false;
+    } catch (error) {
+        isHandshakingRunning = false;
+        throw error;
+    }
 }
