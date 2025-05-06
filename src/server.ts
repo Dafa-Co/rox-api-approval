@@ -23,6 +23,7 @@ app.use(express.json());
 // Health Check Endpoint
 app.post(
   "/healthz", 
+  (req, res, next) => decryptRequest(req, res, next, false),
   async (req: Request, res: Response) => {
     console.info("Health check endpoint hit", req.body);
 
